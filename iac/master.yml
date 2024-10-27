@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  VPC with public and private subnets in 2 AZs; IGW; NAT Gateways; 
+  RDS PostgresDB; Redis Cache cluster; ECS cluster managing Lithium API ?Services
+
+Parameters:
+  Env:
+    Type: String
+    Default: "dev"
+    Description: Environment
+    AllowedValues: ['dev', 'qc', 'uat', 'staging', 'prod']
+  
+  ProjectName:
+    Type: String
+    Description: Project Name
+    Default: nestMicroSvc
+  
+  LogLevel:
+    Type: String
+    Description: Log level for the services
+    Default: 'verbose'
+    AllowedValues: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']
+
+  NestedStacksBaseS3Uri:
+    Type: String
+    Description: The S3 bucket that holds the nested stack (without trailing slash '/').
+    Default: https://f2mc-cf-templates.s3.amazonaws.com
+
+  # EC2KeyName: 
+  #   Description: The EC2 Key Pair to allow SSH access to the instances
+  #   Type: AWS::EC2::KeyPair::KeyName
+  #   ConstraintDescription: Must be the name of an existing EC2 KeyPair
+
+  # BastionHostAdminPassword:
+  #   Type: String
+  #   NoEcho: true
+  #   Description: The admin password for Bastion Host
+
+  RestrictedIp:
+    Description: IPv4 address from Bastion can be connected(Add specific IP only, don't add 0.0.0.0)
+    Type: String
+    Default: 103.135.95.18
+
+  # RdsPostgresDbPassword:
+  #   Type: String
+  #   NoEcho: true
+  #   Description: The root user password for RDS PostgreSQL instance
+
+
+  # SecretName:
+  #   Description: The name of the AWS Secret that holds the values for sensitive Env vars.    
+  #   Type: String
+  #   Default: nestapp-dev-api-secrets
+
+  # SecretsVersion:
+  #   Description: Version of secrets in AWS Secrets Manager. Use this to force-update secrets.
+  #   Type: String
+  #   Default: "20231107T0300PM"
+
+  # AcmCertificateId:
+  #   Description: SSL Certificate Id from ACM
+  #   Type: String
+
+
+  VpcCidrIp:
+    Type: String
+    Description: 'Non overlapping VPC Cidr IP'
+    Default: '10.0.0.0'
+
+Conditions: 
+  IsProduction: !Equals ['prod', !Ref Env] 
+
+Resources:
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}vpc.yml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
+        VpcCidrIp: !Ref VpcCidrIp
+        VpcCIDR: 10.8.0.0/16
+        PublicSubnet1CIDR: 10.8.0.0/24
+        PublicSubnet2CIDR: 10.8.1.0/24
+        PrivateSubnet1CIDR: 10.8.2.0/24
+        PrivateSubnet2CIDR: 10.8.3.0/24
+  
+Outputs:
+  # DocstoreBucketNames:
+  #   Description: Names of docstore buckets
+  #   Value: !GetAtt MiscServicesStack.Outputs.DocstoreS3BucketName
+  
+  # BastionHost:
+  #   Description: Bastion Host URL
+  #   Value: !Join ["", [ "Administrator:", !Ref BastionHostAdminPassword,"@", !GetAtt BastionServerStack.Outputs.BastionHost]]
+
+  # DbConnectionStr:
+  #   Description: Database Connection String
+  #   Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
+
+  # CacheConnectionStr:
+  #   Description: Cache Connection String
+  #   Value: !GetAtt CacheStack.Outputs.RedisConnectionString
+
+  # OpenSearchDomainEndpoint:
+  #   Description: Open search domain endpoint Connection String
+  #   Value: !GetAtt OpenSearchStack.Outputs.OpenSearchDomainEndpoint
+
+  # ApiEndpoints:
+  #   Description: API Endpoint URL
+  #   Value: !GetAtt ApiServiceStack.Outputs.ApiServiceEndpoint
+    ApiEndpoints:
+      Description: Vpc details
+      Value: !GetAtt VpcStack.Outputs.VPC
+  

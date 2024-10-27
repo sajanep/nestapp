@@ -22,7 +22,6 @@ import { CitiesModule } from './cities/cities.module';
         entities: [join(process.cwd(), 'dist/**/*.entity.js')],
         synchronize: true
       })
-
     }),
     CitiesModule],
   controllers: [AppController],
