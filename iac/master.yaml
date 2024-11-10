@@ -24,7 +24,7 @@ Parameters:
   NestedStacksBaseS3Uri:
     Type: String
     Description: The S3 bucket that holds the nested stack (without trailing slash '/').
-    Default: https://f2mc-cf-templates.s3.amazonaws.com
+    Default: https://cf-templates-mynest-app.s3.amazonaws.com
 
   # EC2KeyName: 
   #   Description: The EC2 Key Pair to allow SSH access to the instances
@@ -62,10 +62,26 @@ Parameters:
   #   Type: String
 
 
-  VpcCidrIp:
+  VpcCIDR:
     Type: String
     Description: 'Non overlapping VPC Cidr IP'
-    Default: '10.0.0.0'
+    Default: '10.8.0.0/16'
+  PublicSubnet1CIDR:
+    Type: String
+    Description: 'Public subnet1 CIDR'
+    Default: '10.8.0.0/24'
+  PublicSubnet2CIDR:
+    Type: String
+    Description: 'Public subnet2 CIDR'
+    Default: '10.8.1.0/24'
+  PrivateSubnet1CIDR:
+    Type: String
+    Description: 'Private subnet1 CIDR'
+    Default: '10.8.2.0/24'
+  PrivateSubnet2CIDR:
+    Type: String
+    Description: 'Private subnet2 CIDR'
+    Default: '10.8.3.0/24'
 
 Conditions: 
   IsProduction: !Equals ['prod', !Ref Env] 
@@ -74,16 +90,14 @@ Resources:
   VpcStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${NestedStacksBaseS3Uri}vpc.yml
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/vpc.yaml
       Parameters:        
-        ProjectName: !Ref ProjectName
         Env: !Ref Env
-        VpcCidrIp: !Ref VpcCidrIp
-        VpcCIDR: 10.8.0.0/16
-        PublicSubnet1CIDR: 10.8.0.0/24
-        PublicSubnet2CIDR: 10.8.1.0/24
-        PrivateSubnet1CIDR: 10.8.2.0/24
-        PrivateSubnet2CIDR: 10.8.3.0/24
+        VpcCIDR: !Ref VpcCIDR 
+        PublicSubnet1CIDR: !Ref PublicSubnet1CIDR
+        PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
+        PrivateSubnet1CIDR: !Ref PrivateSubnet1CIDR
+        PrivateSubnet2CIDR: !Ref PrivateSubnet2CIDR
   
 Outputs:
   # DocstoreBucketNames:
@@ -98,18 +112,10 @@ Outputs:
   #   Description: Database Connection String
   #   Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
-  # CacheConnectionStr:
-  #   Description: Cache Connection String
-  #   Value: !GetAtt CacheStack.Outputs.RedisConnectionString
-
-  # OpenSearchDomainEndpoint:
-  #   Description: Open search domain endpoint Connection String
-  #   Value: !GetAtt OpenSearchStack.Outputs.OpenSearchDomainEndpoint
-
   # ApiEndpoints:
   #   Description: API Endpoint URL
   #   Value: !GetAtt ApiServiceStack.Outputs.ApiServiceEndpoint
-    ApiEndpoints:
+    VpcDetails:
       Description: Vpc details
       Value: !GetAtt VpcStack.Outputs.VPC
   
