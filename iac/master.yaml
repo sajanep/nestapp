@@ -98,6 +98,14 @@ Resources:
         PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
         PrivateSubnet1CIDR: !Ref PrivateSubnet1CIDR
         PrivateSubnet2CIDR: !Ref PrivateSubnet2CIDR
+
+  EcrStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecr.yaml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
   
 Outputs:
   # DocstoreBucketNames:

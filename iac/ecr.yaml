@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ECR repository"
+
+Parameters:
+  Env:
+    Type: String
+    Default: "dev"
+    Description: Environment
+
+  ProjectName:
+    Type: String
+    Description: Project Name   
+
+Mappings:
+  LifecyclePolicies:
+    DefaultPolicy:
+      PolicyText: |
+        {
+          "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep Only 3 latest images",
+                "selection": {
+                    "tagStatus": "any",
+                    "countType": "imageCountMoreThan",
+                    "countNumber": 3
+                },
+                "action": {
+                    "type": "expire"
+                }
+              }
+          ]
+        }
+
+Conditions: 
+  IsProduction: !Equals ["prod", !Ref Env]
+
+Resources: 
+  ApiServiceEcrRepo:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:       
+      RepositoryName: !Sub ${ProjectName}-api-${Env}
+      LifecyclePolicy: 
+        LifecyclePolicyText: !FindInMap [ LifecyclePolicies, DefaultPolicy, PolicyText ]
+
+Outputs:
+  ApiEcrRepoUri:
+    Description: The ECR URL for API Service.
+    Value: !GetAtt ApiServiceEcrRepo.RepositoryUri

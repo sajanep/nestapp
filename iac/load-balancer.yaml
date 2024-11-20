@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ALB for ECS Fargate tasks with path-based routing
+
+Parameters:
+  VpcId:
+    Description: VPC where the ECS tasks and ALB will run
+    Type: AWS::EC2::VPC::Id
+
+  SubnetIds:
+    Description: List of subnets for ALB
+    Type: List<AWS::EC2::Subnet::Id>
+
+Resources:
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ECSFargateALB
+      Scheme: internet-facing
+      Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Type: application
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ALB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+
+
+  ALBListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+
+
+
+Outputs:
+  ALBEndpoint:
+    Description: The URL of the Application Load Balancer
+    Value: !Sub "http://${ALB.DNSName}"
+  
+  LoadBalancerArn:
+    Description: A reference to the Application Load Balancer
+    Value: !Ref ALB
+  
+  LoadBalancerCanonicalHostedZoneID:
+    Description: A reference to the Application Load Balancer
+    Value: !Sub ${ALB.CanonicalHostedZoneID}
+
+  ListenerHTTP:
+    Description: A reference to a port 80 listener
+    Value: !Ref AlbListenerHTTP
+
+  LoadBalancerSG:
+    Description: A reference to the load balancer's security group
+    Value: !Ref AlbSecurityGroup
