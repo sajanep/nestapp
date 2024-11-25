@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  This template deploys an PostgreSQL RDS instance.
+
+Parameters:
+  Env:
+    Type: String
+    Default: "prod"
+    Description: Environment Name
+
+  ProjectName:
+    Type: String
+    Description: Project Name
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id    
+    Description: The VPC Id 
+  
+  VpcCIDR:
+    Type: String    
+    Description: The VPC CIDR 
+
+  RdsPostgresDbUsername:
+    Type: String
+    Description: Postgres DB Username
+
+  RdsPostgresDbPassword:
+    Type: String
+    NoEcho: true    
+    Description: Postgres DB Password
+
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The Private Subnets
+
+Mappings:  
+  EnvInstanceTypeMap:  
+    dev: 
+      InstanceType: db.t3.micro 
+
+Conditions: 
+  IsProduction: !Equals ["prod", !Ref Env]
+
+Resources:
+  PostgresDb:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      AllocatedStorage: "10"
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      DBInstanceClass: !FindInMap [ EnvInstanceTypeMap, !Ref Env, InstanceType ]
+      DBInstanceIdentifier: !Sub ${ProjectName}-rds-${Env}
+      Port: "7589"
+      StorageType: gp3
+      BackupRetentionPeriod: 7
+      MasterUsername: !Ref RdsPostgresDbUsername
+      MasterUserPassword: !Ref RdsPostgresDbPassword
+      PreferredBackupWindow: 06:00-07:00
+      PreferredMaintenanceWindow: sun:07:00-sun:08:00
+      EnableCloudwatchLogsExports: [postgresql, upgrade]
+      DeletionProtection: true
+      Engine: postgres
+      EngineVersion: 14
+      LicenseModel: postgresql-license
+      MultiAZ: !If [IsProduction, true, false]
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      StorageEncrypted: true
+      VPCSecurityGroups:
+        - !Ref PostgresSecurityGroup
+
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Created from the DB Cloudformation template
+      DBSubnetGroupName: !Sub ${ProjectName}-${Env}-db-subnet-group
+      SubnetIds: !Ref PrivateSubnets
+  
+  #### Security Groups ####
+  PostgresSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SG for Postgres"
+      GroupName: !Sub Postgres SG (${ProjectName}-${Env})
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:       
+        - IpProtocol: tcp
+          FromPort: 7589
+          ToPort: 7589
+          CidrIp: !Ref VpcCIDR
+          Description: Allow Postgres access from VPC
+      Tags:
+        - Key: Name
+          Value: !Sub Postgres SG (${ProjectName}-${Env})
+
+  
+Outputs:   
+    
+  PostgresConnectionString:
+    Description: The PostgresEndpoint and port.
+    Value: !Sub postgresql://${RdsPostgresDbUsername}:${RdsPostgresDbPassword}@${PostgresDb.Endpoint.Address}:${PostgresDb.Endpoint.Port}/
+
+  PostgresDbSecurityGroup:
+    Description: The security group
+    Value: !Ref PostgresSecurityGroup

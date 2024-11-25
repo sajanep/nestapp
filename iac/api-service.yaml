@@ -10,7 +10,53 @@ Parameters:
     Description: List of subnets for ALB
     Type: List<AWS::EC2::Subnet::Id>
 
+  EcsCluster:
+    Description: The ECS cluster to deploy the services to
+    Type: String
+
+  # EcsAlbListener:
+  #   Description: The Application Load Balancer HTTPS listener to register with
+  #   Type: String
+  
+  EcsAlbListenerHTTP:
+    Description: The Application Load Balancer HTTP listener to register with
+    Type: String
+  
+  ServiceContainerPort:
+    Description: The container port to which the API listens to.
+    Type: String
+    Default: "3000"
+  
+  EcsTaskExecutionRoleArn:
+    Description: The role to apply to ECS task/task definitions.
+    Type: String
+  
+  EcsServiceRoleArn:
+    Description: The role to apply to ECS services.
+    Type: String
+  
+  PostgresDbConStr:
+    Description: The Postgres DB connection string.
+    Type: String  
+
+  Env:
+    Type: String
+    Default: "dev"
+    Description: Environment
+
+  ProjectName:
+    Type: String
+    Description: Project Name   
+
 Resources:
+  ApiCloudwatchLogsGroupEnv:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub ${ProjectName}-api-ecs-log-${Env}
+      RetentionInDays: 30 
+
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -20,13 +66,20 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
-      TaskRoleArn: !GetAtt TaskExecutionRole.Arn
+      ExecutionRoleArn: !Ref EcsTaskExecutionRoleArn
+      TaskRoleArn:  !GetAtt EcsTaskRole.Arn
       ContainerDefinitions:
-        - Name: web
+        - Name: !Sub ${ProjectName}-api-container-${Env}
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProjectName}-api-${Env}:latest
+          Environment:
+            - Name: PORT
+              Value: !Ref ServiceContainerPort
+            - Name: AWS_REGION
+              Value: !Sub ${AWS::Region}
+            - Name: DB_CONNECTION_STRING
+              Value: !Ref PostgresDbConStr
           PortMappings:
-            - ContainerPort: 3000
+            - ContainerPort: !Ref ServiceContainerPort
               Protocol: tcp
           LogConfiguration:
             LogDriver: awslogs
@@ -38,9 +91,9 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     DependsOn:
-      - ALBListener
+      - ALBListenerRule
     Properties:
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref EcsCluster
       TaskDefinition: !Ref TaskDefinition
       LaunchType: FARGATE
       DesiredCount: 2
@@ -51,28 +104,20 @@ Resources:
           SecurityGroups:
             - !Ref TaskSecurityGroup
       LoadBalancers:
-        - ContainerName: web
-          ContainerPort: 80
+        - ContainerName: !Sub ${ProjectName}-api-container-${Env}
+          ContainerPort: !Ref ServiceContainerPort
           TargetGroupArn: !Ref ALBTargetGroup
 
-  TaskSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for ECS tasks
-      VpcId: !Ref VpcId
+  # TaskSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Security group for ECS tasks
+  #     VpcId: !Ref VpcId
 
-  ApiCloudwatchLogsGroupEnv:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      LogGroupName: !Sub ${ProjectName}-api-ecs-log-${Env}
-      RetentionInDays: 30 
-  
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: ECSFargateTargetGroup
+      Name: EcsFargateTargetGroup
       Protocol: HTTP
       Port: 80
       VpcId: !Ref VpcId
@@ -85,7 +130,7 @@ Resources:
   ALBListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
-      ListenerArn: !Ref ALBListener
+      ListenerArn: !Ref EcsAlbListenerHTTP
       Conditions:
         - Field: path-pattern
           Values:
@@ -94,3 +139,27 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
       Priority: 1
+  
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: AccessSecretsManager
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:my-secret-name-* # Replace with your secret ARN(s)

@@ -36,16 +36,10 @@ Parameters:
   #   NoEcho: true
   #   Description: The admin password for Bastion Host
 
-  RestrictedIp:
-    Description: IPv4 address from Bastion can be connected(Add specific IP only, don't add 0.0.0.0)
+  RdsPostgresDbPassword:
     Type: String
-    Default: 103.135.95.18
-
-  # RdsPostgresDbPassword:
-  #   Type: String
-  #   NoEcho: true
-  #   Description: The root user password for RDS PostgreSQL instance
-
+    NoEcho: true
+    Description: The root user password for RDS PostgreSQL instance
 
   # SecretName:
   #   Description: The name of the AWS Secret that holds the values for sensitive Env vars.    
@@ -107,6 +101,33 @@ Resources:
         ProjectName: !Ref ProjectName
         Env: !Ref Env
   
+  EcsClusterStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecs-cluster.yaml
+  
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/load-balancer.yml
+      Parameters:
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        PublicSubnets: !GetAtt VpcStack.Outputs.PublicSubnets
+  
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/db-rds.yml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        VpcCIDR: !GetAtt VpcStack.Outputs.VpcCidrBlock
+        PrivateSubnets: !GetAtt VpcStack.Outputs.PrivateSubnets
+        RdsPostgresDbUsername: testuser
+        RdsPostgresDbPassword: !Ref RdsPostgresDbPassword
+              
+  
 Outputs:
   # DocstoreBucketNames:
   #   Description: Names of docstore buckets
@@ -116,14 +137,16 @@ Outputs:
   #   Description: Bastion Host URL
   #   Value: !Join ["", [ "Administrator:", !Ref BastionHostAdminPassword,"@", !GetAtt BastionServerStack.Outputs.BastionHost]]
 
-  # DbConnectionStr:
-  #   Description: Database Connection String
-  #   Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
+  DbConnectionStr:
+    Description: Database Connection String
+    Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
   # ApiEndpoints:
   #   Description: API Endpoint URL
   #   Value: !GetAtt ApiServiceStack.Outputs.ApiServiceEndpoint
-    VpcDetails:
-      Description: Vpc details
-      Value: !GetAtt VpcStack.Outputs.VPC
+
+  VpcDetails:
+    Description: Vpc details
+    Value: !GetAtt VpcStack.Outputs.VPC
+ 
   

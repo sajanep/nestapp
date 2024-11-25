@@ -1,17 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: This template deploys an ECS cluster
 
-Parameters:
-  VpcId:
-    Description: VPC where the ECS tasks and ALB will run
-    Type: AWS::EC2::VPC::Id
-
-  SubnetIds:
-    Description: List of subnets for ALB
-    Type: List<AWS::EC2::Subnet::Id>
-
 Resources:
-  ECSCluster:
+  EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: FargateCluster
@@ -19,6 +10,9 @@ Resources:
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      ManagedPolicyArns:       
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -45,7 +39,7 @@ Resources:
 Outputs: 
   EcsCluster:
     Description: A reference to the ECS cluster
-    Value: !Ref ECSCluster
+    Value: !Ref EcsCluster
 
   EcsTaskExecutionRoleArn:
     Description: The ECS Execution Role.
