@@ -162,6 +162,6 @@ Outputs:
 
   VpcDetails:
     Description: Vpc details
-    Value: !GetAtt VpcStack.Outputs.VPC
+    Value: !GetAtt VpcStack.Outputs.Vpc
  
   

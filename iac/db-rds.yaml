@@ -60,7 +60,7 @@ Resources:
       PreferredBackupWindow: 06:00-07:00
       PreferredMaintenanceWindow: sun:07:00-sun:08:00
       EnableCloudwatchLogsExports: [postgresql, upgrade]
-      DeletionProtection: true
+      DeletionProtection: false
       Engine: postgres
       EngineVersion: 14
       LicenseModel: postgresql-license
