@@ -1,0 +1,6 @@
+[
+    {
+        "ParameterKey": "RdsPostgresDbPassword",
+        "ParameterValue": "test123*"
+    }
+]

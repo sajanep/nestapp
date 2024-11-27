@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   VPC with public and private subnets in 2 AZs; IGW; NAT Gateways; 
-  RDS PostgresDB; Redis Cache cluster; ECS cluster managing Lithium API ?Services
+  RDS PostgresDB;
 
 Parameters:
   Env:
@@ -13,7 +13,7 @@ Parameters:
   ProjectName:
     Type: String
     Description: Project Name
-    Default: nestMicroSvc
+    Default: nestjsmicrosvc
   
   LogLevel:
     Type: String
@@ -55,7 +55,6 @@ Parameters:
   #   Description: SSL Certificate Id from ACM
   #   Type: String
 
-
   VpcCIDR:
     Type: String
     Description: 'Non overlapping VPC Cidr IP'
@@ -93,13 +92,13 @@ Resources:
         PrivateSubnet1CIDR: !Ref PrivateSubnet1CIDR
         PrivateSubnet2CIDR: !Ref PrivateSubnet2CIDR
 
-  EcrStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecr.yaml
-      Parameters:        
-        ProjectName: !Ref ProjectName
-        Env: !Ref Env
+  # EcrStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecr.yaml
+  #     Parameters:        
+  #       ProjectName: !Ref ProjectName
+  #       Env: !Ref Env
   
   EcsClusterStack:
     Type: AWS::CloudFormation::Stack
@@ -109,29 +108,45 @@ Resources:
   LoadBalancerStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/load-balancer.yml
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/load-balancer.yaml
       Parameters:
-        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
+        VpcId: !GetAtt VpcStack.Outputs.Vpc
         PublicSubnets: !GetAtt VpcStack.Outputs.PublicSubnets
   
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/db-rds.yml
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/db-rds.yaml
       Parameters:        
         ProjectName: !Ref ProjectName
         Env: !Ref Env
-        VpcId: !GetAtt VpcStack.Outputs.VpcId
-        VpcCIDR: !GetAtt VpcStack.Outputs.VpcCidrBlock
+        VpcId: !GetAtt VpcStack.Outputs.Vpc
+        VpcCIDR: !Ref VpcCIDR
         PrivateSubnets: !GetAtt VpcStack.Outputs.PrivateSubnets
         RdsPostgresDbUsername: testuser
         RdsPostgresDbPassword: !Ref RdsPostgresDbPassword
               
-  
+  #  ### !!! Ensure that ECR has an image before creating the API service !!! ###
+  # ApiServiceStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
+  #     Parameters:        
+  #       ProjectName: !Ref ProjectName
+  #       Env: !Ref Env
+  #       VpcId: !GetAtt VpcStack.Outputs.VpcId
+  #       SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
+  #       # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
+  #       EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
+  #       AlbListenerRulePriority: "211"
+  #       EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
+  #       EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster        
+  #       ServiceContainerPort: 3000
+  #       PostgresDbConStr: !Join [ "", [ !GetAtt DatabaseStack.Outputs.PostgresConnectionString, !Sub '${ProjectName}-${Env}' ] ]
+
 Outputs:
-  # DocstoreBucketNames:
-  #   Description: Names of docstore buckets
-  #   Value: !GetAtt MiscServicesStack.Outputs.DocstoreS3BucketName
   
   # BastionHost:
   #   Description: Bastion Host URL
