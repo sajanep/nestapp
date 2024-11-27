@@ -36,7 +36,7 @@ Parameters:
 Mappings:  
   EnvInstanceTypeMap:  
     dev: 
-      InstanceType: db.t3.micro 
+      InstanceType: db.t4g.micro 
 
 Conditions: 
   IsProduction: !Equals ["prod", !Ref Env]
@@ -47,7 +47,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      AllocatedStorage: "10"
+      AllocatedStorage: "20"
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
       DBInstanceClass: !FindInMap [ EnvInstanceTypeMap, !Ref Env, InstanceType ]

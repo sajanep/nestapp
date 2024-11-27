@@ -6,6 +6,11 @@ Parameters:
     Type: String
     Default: "dev"
     Description: Environment
+  
+  IAMUserName:
+    Type: String
+    Default: "Sajan"
+    Description: IAM User who can push/pull images to and from ECR
 
   ProjectName:
     Type: String
@@ -38,12 +43,33 @@ Conditions:
 Resources: 
   ApiServiceEcrRepo:
     Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:       
       RepositoryName: !Sub ${ProjectName}-api-${Env}
       LifecyclePolicy: 
         LifecyclePolicyText: !FindInMap [ LifecyclePolicies, DefaultPolicy, PolicyText ]
+  
+   # IAM Policy for ECR
+  ECRPushPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AllowECRPushAccess
+      Users:
+        - !Ref IAMUserName
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecr:GetAuthorizationToken
+              - ecr:BatchCheckLayerAvailability
+              - ecr:PutImage
+              - ecr:InitiateLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:CompleteLayerUpload
+              - ecr:DescribeRepositories
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+            Resource: !GetAtt ApiServiceEcrRepo.Arn
 
 Outputs:
   ApiEcrRepoUri:

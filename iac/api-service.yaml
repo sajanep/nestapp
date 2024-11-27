@@ -31,10 +31,6 @@ Parameters:
     Description: The role to apply to ECS task/task definitions.
     Type: String
   
-  EcsServiceRoleArn:
-    Description: The role to apply to ECS services.
-    Type: String
-  
   PostgresDbConStr:
     Description: The Postgres DB connection string.
     Type: String  
@@ -47,6 +43,12 @@ Parameters:
   ProjectName:
     Type: String
     Description: Project Name   
+  
+  LogLevel:
+    Type: String
+    Description: Log level of the micro service
+    Default: 'info'
+    AllowedValues: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']
 
 Resources:
   ApiCloudwatchLogsGroupEnv:
@@ -78,6 +80,8 @@ Resources:
               Value: !Sub ${AWS::Region}
             - Name: DB_CONNECTION_STRING
               Value: !Ref PostgresDbConStr
+            - Name: LOG_LEVEL
+              Value: !Ref LogLevel
           PortMappings:
             - ContainerPort: !Ref ServiceContainerPort
               Protocol: tcp
@@ -88,6 +92,13 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: api
 
+
+  EcsTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !Ref VpcId
+  
   ECSService:
     Type: AWS::ECS::Service
     DependsOn:
@@ -102,24 +113,18 @@ Resources:
           AssignPublicIp: ENABLED
           Subnets: !Ref SubnetIds
           SecurityGroups:
-            - !Ref TaskSecurityGroup
+            - !Ref EcsTaskSecurityGroup
       LoadBalancers:
         - ContainerName: !Sub ${ProjectName}-api-container-${Env}
           ContainerPort: !Ref ServiceContainerPort
           TargetGroupArn: !Ref ALBTargetGroup
-
-  # TaskSecurityGroup:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Properties:
-  #     GroupDescription: Security group for ECS tasks
-  #     VpcId: !Ref VpcId
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: EcsFargateTargetGroup
       Protocol: HTTP
-      Port: 80
+      Port: !Ref ServiceContainerPort
       VpcId: !Ref VpcId
       TargetType: ip
       HealthCheckPath: /

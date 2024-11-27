@@ -6,21 +6,19 @@ Parameters:
     Description: VPC where the ECS tasks and ALB will run
     Type: AWS::EC2::VPC::Id
 
-  SubnetIds:
+  PublicSubnets:
     Description: List of subnets for ALB
     Type: List<AWS::EC2::Subnet::Id>
+  
+  Env:
+    Type: String
+    Description: Environment
+
+  ProjectName:
+    Type: String
+    Description: Project Name  
 
 Resources:
-  ALB:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Name: ECSFargateALB
-      Scheme: internet-facing
-      Subnets: !Ref SubnetIds
-      SecurityGroups:
-        - !GetAtt ALBSecurityGroup.GroupId
-      Type: application
-
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -31,13 +29,34 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
+  
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ECSFargateALB
+      Scheme: internet-facing
+      Subnets: !Ref PublicSubnets
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Type: application
 
-  ALBListenerHTTP:
+ # We define a default target group here, as this is a mandatory Parameters
+  # when creating an Application Load Balancer Listener. This is not used, instead
+  # a target group is created per-service in each service template (../services/*)
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${ProjectName}-def-tg-${Env}
+      VpcId: !Ref VpcId
+      Port: 443
+      Protocol: HTTPS
+  
+  AlbListenerHTTP:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroup
+          TargetGroupArn: !Ref DefaultTargetGroup
       LoadBalancerArn: !Ref ALB
       Port: 80
       Protocol: HTTP
@@ -59,6 +78,6 @@ Outputs:
     Description: A reference to a port 80 listener
     Value: !Ref AlbListenerHTTP
 
-  LoadBalancerSG:
-    Description: A reference to the load balancer's security group
-    Value: !Ref AlbSecurityGroup
+  # LoadBalancerSG:
+  #   Description: A reference to the load balancer's security group
+  #   Value: !Ref AlbSecurityGroup
