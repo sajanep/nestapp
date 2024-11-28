@@ -4,7 +4,6 @@ Description: "ECR repository"
 Parameters:
   Env:
     Type: String
-    Default: "dev"
     Description: Environment
   
   IAMUserName:

@@ -26,20 +26,25 @@ Parameters:
     Description: The S3 bucket that holds the nested stack (without trailing slash '/').
     Default: https://cf-templates-mynest-app.s3.amazonaws.com
 
-  # EC2KeyName: 
-  #   Description: The EC2 Key Pair to allow SSH access to the instances
-  #   Type: AWS::EC2::KeyPair::KeyName
-  #   ConstraintDescription: Must be the name of an existing EC2 KeyPair
-
   # BastionHostAdminPassword:
   #   Type: String
   #   NoEcho: true
   #   Description: The admin password for Bastion Host
 
+  RdsPostgresDbUsername:
+    Type: String
+    Default: "postgres"
+    Description: The root user name for RDS PostgreSQL instance
+
   RdsPostgresDbPassword:
     Type: String
     NoEcho: true
     Description: The root user password for RDS PostgreSQL instance
+  
+  DbName:
+    Type: String
+    Default: "nestsvcdb"
+    Description: The name of PostgreSQL database
 
   # SecretName:
   #   Description: The name of the AWS Secret that holds the values for sensitive Env vars.    
@@ -125,8 +130,9 @@ Resources:
         VpcId: !GetAtt VpcStack.Outputs.Vpc
         VpcCIDR: !Ref VpcCIDR
         PrivateSubnets: !GetAtt VpcStack.Outputs.PrivateSubnets
-        RdsPostgresDbUsername: testuser
+        RdsPostgresDbUsername: !Ref RdsPostgresDbUsername
         RdsPostgresDbPassword: !Ref RdsPostgresDbPassword
+        DbName: !Ref DbName
               
   #  ### !!! Ensure that ECR has an image before creating the API service !!! ###
   ApiServiceStack:
@@ -142,12 +148,11 @@ Resources:
         EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
         AlbListenerRulePriority: "211"
         EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
-        EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster        
+        EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster
         ServiceContainerPort: 3000
-        PostgresDbConStr: !Join [ "", [ !GetAtt DatabaseStack.Outputs.PostgresConnectionString, !Sub '${ProjectName}-${Env}' ] ]
+        PostgresDbConStr: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
 Outputs:
-  
   # BastionHost:
   #   Description: Bastion Host URL
   #   Value: !Join ["", [ "Administrator:", !Ref BastionHostAdminPassword,"@", !GetAtt BastionServerStack.Outputs.BastionHost]]

@@ -28,6 +28,10 @@ Parameters:
     Type: String
     NoEcho: true    
     Description: Postgres DB Password
+  
+  DbName:
+    Type: String
+    Description: Postgres DB Name
 
   PrivateSubnets:
     Type: List<AWS::EC2::Subnet::Id>
@@ -50,6 +54,7 @@ Resources:
       AutoMinorVersionUpgrade: true
       DBInstanceClass: !FindInMap [ EnvInstanceTypeMap, !Ref Env, InstanceType ]
       DBInstanceIdentifier: !Sub ${ProjectName}-rds-${Env}
+      DBName: !Ref DbName
       Port: "7589"
       StorageType: gp3
       BackupRetentionPeriod: 7
@@ -92,12 +97,10 @@ Resources:
         - Key: Name
           Value: !Sub Postgres SG (${ProjectName}-${Env})
 
-  
 Outputs:   
-    
   PostgresConnectionString:
-    Description: The PostgresEndpoint and port.
-    Value: !Sub postgresql://${RdsPostgresDbUsername}:${RdsPostgresDbPassword}@${PostgresDb.Endpoint.Address}:${PostgresDb.Endpoint.Port}/
+    Description: Postgress database connection string
+    Value: !Sub postgresql://${RdsPostgresDbUsername}:${RdsPostgresDbPassword}@${PostgresDb.Endpoint.Address}:${PostgresDb.Endpoint.Port}/${DbName}
 
   PostgresDbSecurityGroup:
     Description: The security group
