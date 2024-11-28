@@ -92,13 +92,13 @@ Resources:
         PrivateSubnet1CIDR: !Ref PrivateSubnet1CIDR
         PrivateSubnet2CIDR: !Ref PrivateSubnet2CIDR
 
-  # EcrStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecr.yaml
-  #     Parameters:        
-  #       ProjectName: !Ref ProjectName
-  #       Env: !Ref Env
+  EcrStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/ecr.yaml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
   
   EcsClusterStack:
     Type: AWS::CloudFormation::Stack
@@ -129,22 +129,22 @@ Resources:
         RdsPostgresDbPassword: !Ref RdsPostgresDbPassword
               
   #  ### !!! Ensure that ECR has an image before creating the API service !!! ###
-  # ApiServiceStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
-  #     Parameters:        
-  #       ProjectName: !Ref ProjectName
-  #       Env: !Ref Env
-  #       VpcId: !GetAtt VpcStack.Outputs.VpcId
-  #       SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
-  #       # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
-  #       EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
-  #       AlbListenerRulePriority: "211"
-  #       EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
-  #       EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster        
-  #       ServiceContainerPort: 3000
-  #       PostgresDbConStr: !Join [ "", [ !GetAtt DatabaseStack.Outputs.PostgresConnectionString, !Sub '${ProjectName}-${Env}' ] ]
+  ApiServiceStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
+        VpcId: !GetAtt VpcStack.Outputs.Vpc
+        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
+        # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
+        EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
+        AlbListenerRulePriority: "211"
+        EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
+        EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster        
+        ServiceContainerPort: 3000
+        PostgresDbConStr: !Join [ "", [ !GetAtt DatabaseStack.Outputs.PostgresConnectionString, !Sub '${ProjectName}-${Env}' ] ]
 
 Outputs:
   
@@ -156,12 +156,7 @@ Outputs:
     Description: Database Connection String
     Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
-  # ApiEndpoints:
-  #   Description: API Endpoint URL
-  #   Value: !GetAtt ApiServiceStack.Outputs.ApiServiceEndpoint
-
   VpcDetails:
     Description: Vpc details
     Value: !GetAtt VpcStack.Outputs.Vpc
  
-  

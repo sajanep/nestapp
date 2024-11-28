@@ -44,8 +44,6 @@ Conditions:
 Resources:
   PostgresDb:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       AllocatedStorage: "20"
       AllowMajorVersionUpgrade: false
