@@ -1,3 +1,13 @@
 docker build -t my-nestjs-app .
-docker run -p 3000:3000 my-nestjs-app
+docker run -p 3000:3000 -e DB_CONNECTION_STRING='postgresql://postgres:postgres@local_pgdb:5432/testdb' my-nestjs-app
 docker save my-nestjs-app > myapp.tar
+
+aws cloudformation delete-stack --stack-name MyStack
+
+aws cloudformation create-stack --stack-name MyStack  --template-body file://master.yaml --parameters file://parameters.json --capabilities CAPABILITY_IAM
+
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 559050250437.dkr.ecr.ap-south-1.amazonaws.com
+
+docker tag my-nestjs-app:latest 559050250437.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
+
+docker push 559050250437.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
