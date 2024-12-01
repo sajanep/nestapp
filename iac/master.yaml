@@ -135,22 +135,22 @@ Resources:
         DbName: !Ref DbName
               
   #  ### !!! Ensure that ECR has an image before creating the API service !!! ###
-  ApiServiceStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
-      Parameters:        
-        ProjectName: !Ref ProjectName
-        Env: !Ref Env
-        VpcId: !GetAtt VpcStack.Outputs.Vpc
-        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
-        # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
-        EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
-        AlbListenerRulePriority: "211"
-        EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
-        EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster
-        ServiceContainerPort: 3000
-        PostgresDbConStr: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
+  # ApiServiceStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
+  #     Parameters:        
+  #       ProjectName: !Ref ProjectName
+  #       Env: !Ref Env
+  #       VpcId: !GetAtt VpcStack.Outputs.Vpc
+  #       SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
+  #       # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
+  #       EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
+  #       AlbListenerRulePriority: "211"
+  #       EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
+  #       EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster
+  #       ServiceContainerPort: 3000
+  #       PostgresDbConStr: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
 Outputs:
   # BastionHost:

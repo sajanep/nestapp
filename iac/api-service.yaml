@@ -130,7 +130,7 @@ Resources:
       Port: !Ref ServiceContainerPort
       VpcId: !Ref VpcId
       TargetType: ip
-      HealthCheckPath: /
+      HealthCheckPath: "/api/health"
       HealthCheckProtocol: HTTP
       Matcher:
         HttpCode: 200
