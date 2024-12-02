@@ -1,5 +1,5 @@
 docker build -t my-nestjs-app .
-docker run -p 3000:3000 -e DB_CONNECTION_STRING='postgresql://postgres:postgres@local_pgdb:5432/testdb' my-nestjs-app
+docker run -p 3000:3000 -e DB_CONNECTION_STRING='postgresql://postgres:postgres@host.docker.internal:5432/testdb' my-nestjs-app
 docker save my-nestjs-app > myapp.tar
 
 aws cloudformation delete-stack --stack-name MyStack
