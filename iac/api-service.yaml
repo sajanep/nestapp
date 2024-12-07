@@ -144,7 +144,7 @@ Resources:
       HealthCheckTimeoutSeconds: 30
       HealthCheckIntervalSeconds: 45
       HealthyThresholdCount: 2
-      HealthCheckPath: "/health"
+      HealthCheckPath: "/api/health"
       HealthCheckProtocol: HTTP
       Matcher:
         HttpCode: 200

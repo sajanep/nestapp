@@ -1,7 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 
-@Controller('health')
+@Controller('api/health')
 export class HealthController {
     private logger = new Logger("HealthCheck");
     constructor(
