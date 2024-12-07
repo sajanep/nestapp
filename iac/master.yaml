@@ -46,16 +46,6 @@ Parameters:
     Default: "nestsvcdb"
     Description: The name of PostgreSQL database
 
-  # SecretName:
-  #   Description: The name of the AWS Secret that holds the values for sensitive Env vars.    
-  #   Type: String
-  #   Default: nestapp-dev-api-secrets
-
-  # SecretsVersion:
-  #   Description: Version of secrets in AWS Secrets Manager. Use this to force-update secrets.
-  #   Type: String
-  #   Default: "20231107T0300PM"
-
   # AcmCertificateId:
   #   Description: SSL Certificate Id from ACM
   #   Type: String
@@ -135,31 +125,32 @@ Resources:
         DbName: !Ref DbName
               
   #  ### !!! Ensure that ECR has an image before creating the API service !!! ###
-  # ApiServiceStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
-  #     Parameters:        
-  #       ProjectName: !Ref ProjectName
-  #       Env: !Ref Env
-  #       VpcId: !GetAtt VpcStack.Outputs.Vpc
-  #       SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
-  #       # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
-  #       EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
-  #       AlbListenerRulePriority: "211"
-  #       EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
-  #       EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster
-  #       ServiceContainerPort: 3000
-  #       PostgresDbConStr: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
+  ApiServiceStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${NestedStacksBaseS3Uri}/${Env}/api-service.yaml
+      Parameters:        
+        ProjectName: !Ref ProjectName
+        Env: !Ref Env
+        VpcId: !GetAtt VpcStack.Outputs.Vpc
+        SubnetIds: !GetAtt VpcStack.Outputs.PrivateSubnets
+        # EcsAlbListener: !GetAtt LoadBalancerStack.Outputs.Listener
+        EcsAlbListenerHTTP: !GetAtt LoadBalancerStack.Outputs.ListenerHTTP
+        EcsAlbSecurityGroup: !GetAtt LoadBalancerStack.Outputs.LoadBalancerSG
+        AlbListenerRulePriority: "211"
+        EcsTaskExecutionRoleArn: !GetAtt EcsClusterStack.Outputs.EcsTaskExecutionRoleArn
+        EcsCluster: !GetAtt EcsClusterStack.Outputs.EcsCluster
+        ServiceContainerPort: 3000
+        PostgresDbConStr: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
 
 Outputs:
-  # BastionHost:
-  #   Description: Bastion Host URL
-  #   Value: !Join ["", [ "Administrator:", !Ref BastionHostAdminPassword,"@", !GetAtt BastionServerStack.Outputs.BastionHost]]
-
   DbConnectionStr:
     Description: Database Connection String
     Value: !GetAtt DatabaseStack.Outputs.PostgresConnectionString
+
+  LoadbalancerDNS:
+    Description: Load balancer DNS
+    Value: !GetAtt LoadBalancerStack.Outputs.ALBEndpoint
 
   VpcDetails:
     Description: Vpc details

@@ -22,6 +22,10 @@ Parameters:
     Description: The Application Load Balancer HTTP listener to register with
     Type: String
 
+  EcsAlbSecurityGroup:
+    Description: The Application Load Balancer Security group
+    Type: String
+
   AlbListenerRulePriority:
     Description: The priorityof the listener rule (must be different for each env on the same ALB)
     Type: Number
@@ -99,8 +103,13 @@ Resources:
   EcsTaskSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for ECS tasks
+      GroupDescription: Allow traffic only from ALB
       VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ServiceContainerPort
+          ToPort: !Ref ServiceContainerPort
+          SourceSecurityGroupId: !Ref EcsAlbSecurityGroup
   
   ECSService:
     Type: AWS::ECS::Service
@@ -110,10 +119,11 @@ Resources:
       Cluster: !Ref EcsCluster
       TaskDefinition: !Ref TaskDefinition
       LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 10
       DesiredCount: 1
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           Subnets: !Ref SubnetIds
           SecurityGroups:
             - !Ref EcsTaskSecurityGroup
@@ -130,10 +140,11 @@ Resources:
       Port: !Ref ServiceContainerPort
       VpcId: !Ref VpcId
       TargetType: ip
-      HealthCheckEnabled: true      
+      HealthCheckEnabled: true
+      HealthCheckTimeoutSeconds: 30
       HealthCheckIntervalSeconds: 45
       HealthyThresholdCount: 2
-      HealthCheckPath: "/api/health"
+      HealthCheckPath: "/health"
       HealthCheckProtocol: HTTP
       Matcher:
         HttpCode: 200

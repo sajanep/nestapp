@@ -48,8 +48,13 @@ Resources:
     Properties:
       Name: !Sub ${ProjectName}-def-tg-${Env}
       VpcId: !Ref VpcId
-      Port: 443
-      Protocol: HTTPS
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: /
+      HealthCheckTimeoutSeconds: 30
+      HealthCheckIntervalSeconds: 45
+      HealthyThresholdCount: 2
   
   AlbListenerHTTP:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -69,15 +74,11 @@ Outputs:
   LoadBalancerArn:
     Description: A reference to the Application Load Balancer
     Value: !Ref ALB
-  
-  LoadBalancerCanonicalHostedZoneID:
-    Description: A reference to the Application Load Balancer
-    Value: !Sub ${ALB.CanonicalHostedZoneID}
 
   ListenerHTTP:
     Description: A reference to a port 80 listener
     Value: !Ref AlbListenerHTTP
 
-  # LoadBalancerSG:
-  #   Description: A reference to the load balancer's security group
-  #   Value: !Ref AlbSecurityGroup
+  LoadBalancerSG:
+    Description: A reference to the load balancer's security group
+    Value: !Ref ALBSecurityGroup
