@@ -6,8 +6,8 @@ aws cloudformation delete-stack --stack-name MyStack
 
 aws cloudformation create-stack --stack-name MyStack  --template-body file://master.yaml --parameters file://parameters.json --capabilities CAPABILITY_IAM
 
-aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 559050250437.dkr.ecr.ap-south-1.amazonaws.com
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin <accountno>.dkr.ecr.ap-south-1.amazonaws.com
 
-docker tag my-nestjs-app:latest 559050250437.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
+docker tag my-nestjs-app:latest <accountno>.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
 
-docker push 559050250437.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
+docker push <accountno>.dkr.ecr.ap-south-1.amazonaws.com/nestjsmicrosvc-api-dev:latest
