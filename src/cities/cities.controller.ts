@@ -2,12 +2,17 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { CitiesService } from './cities.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('api/cities')
 export class CitiesController {
   constructor(private readonly citiesService: CitiesService) {}
 
   @Post()
+  @ApiBody({
+    type: CreateCityDto,
+    description: 'Json structure for City object',
+ })
   create(@Body() createCityDto: CreateCityDto) {
     return this.citiesService.create(createCityDto);
   }
@@ -23,6 +28,10 @@ export class CitiesController {
   }
 
   @Patch(':id')
+  @ApiBody({
+    type: UpdateCityDto,
+    description: 'Json structure for City object',
+ })
   update(@Param('id') id: string, @Body() updateCityDto: UpdateCityDto) {
     return this.citiesService.update(+id, updateCityDto);
   }

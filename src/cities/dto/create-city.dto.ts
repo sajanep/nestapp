@@ -1,7 +1,20 @@
-export class CreateCityDto {
-    name:string
+import { ApiProperty } from "@nestjs/swagger"
+import { IsNotEmpty } from "class-validator"
 
-    country:string
-    
-    isActive:boolean
+export class CreateCityDto {
+    @ApiProperty({
+        example: 'Chennai',
+        required: true
+    })
+    @IsNotEmpty()
+    name: string
+
+    @ApiProperty({
+        example: 'India',
+        required: true
+    })
+    @IsNotEmpty()
+    country: string
+
+    isActive: boolean
 }
